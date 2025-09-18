@@ -341,24 +341,6 @@ function handleModTypeChange() {
     }
 }
 
-// --- SECTION: INITIALIZATION & EVENT LISTENERS ---
-function init() {
-    if (!auth) return;
-    document.getElementById('log-date').valueAsDate = new Date();
-    signInBtn.addEventListener('click', () => signInWithPopup(auth, new GoogleAuthProvider()));
-    signOutBtn.addEventListener('click', () => signOut(auth));
-    logForm.addEventListener('submit', handleLogSubmit);
-    modTypeSelect.addEventListener('change', handleModTypeChange);
-    displayNameInput.addEventListener('change', (e) => saveSetting('displayName', e.target.value));
-    userBirthdayInput.addEventListener('change', (e) => saveSetting('birthday', e.target.value));
-    setupTabListeners();
-    setupThemeSwitcher();
-    setupGoalModalListeners();
-    setupFriendModalListeners();
-    setupProfileTabListeners();
-    handleModTypeChange();
-}
-
 function setupTabListeners() {
     document.querySelectorAll('.tab-link').forEach(link => {
         link.addEventListener('click', (e) => {
@@ -959,8 +941,4 @@ function clearAllData() {
 
 // --- RUN ---
 init();
-handleModTypeChange();
-" with a syntax error in it, specifically "if (latestLog.mod_type === 'piercing') details = latestLog.piercing_type ||." and I am pointing it out. 
-The error is:
-Uncaught SyntaxError: Unexpected token '.'
 
