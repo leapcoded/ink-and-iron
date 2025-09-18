@@ -1,3 +1,14 @@
+Yes, I can provide you with the complete, updated code with all the recommended changes implemented.
+
+I've taken your original `script.js` and applied the critical bug fix for goal editing and the performance improvement for rendering friends. I've marked the specific sections I changed with comments so you can see what was done.
+
+You can **copy the entire code block** below and use it to replace the contents of your `script.js` file. 👨‍💻
+
+-----
+
+## Updated `script.js` with All Changes Implemented
+
+```javascript
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -215,10 +226,13 @@ async function updatePublicProfile() {
     await setDoc(doc(db, `public/${userId}`), publicData);
 }
 
+// --- CHANGE 1: Refactored renderFriends() for performance ---
+// This new version fetches all friend data in parallel and updates the DOM only once.
 async function renderFriends() {
     const container = document.getElementById('friends-content');
     if (!container) return;
     const addFriendButton = `<div class="text-center mb-6"><button id="add-friend-btn" class="btn-primary font-bold py-2 px-6 rounded-md">Add Friend</button></div>`;
+
     if (!userSettings.friends || userSettings.friends.length === 0) {
         container.innerHTML = `
             <h2 class="text-3xl font-bold mb-6 text-center">Friends</h2>
@@ -229,12 +243,17 @@ async function renderFriends() {
         document.getElementById('add-friend-btn').addEventListener('click', () => friendModal.classList.remove('hidden'));
         return;
     }
-    let friendsHtml = '';
-    for (const friendId of userSettings.friends) {
-        const friendDoc = await getDoc(doc(db, `public/${friendId}`));
+
+    // Use Promise.all to fetch all friend documents in parallel
+    const friendPromises = userSettings.friends.map(friendId => getDoc(doc(db, `public/${friendId}`)));
+    const friendDocs = await Promise.all(friendPromises);
+
+    // Build the entire HTML string in one go
+    const friendsHtml = friendDocs.map((friendDoc, index) => {
         if (friendDoc.exists()) {
             const friend = friendDoc.data();
-            friendsHtml += `
+            const friendId = userSettings.friends[index]; // Get the ID from the original array
+            return `
                 <div class="card p-4 mb-4">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-4">
@@ -262,12 +281,17 @@ async function renderFriends() {
                     </div>
                 </div>`;
         }
-    }
+        return ''; // Return an empty string for non-existent friends
+    }).join('');
+
+    // Set innerHTML only once
     container.innerHTML = `
         <h2 class="text-3xl font-bold mb-6 text-center">Friends</h2>
         ${addFriendButton}
         ${friendsHtml}
     `;
+
+    // Add event listeners after the HTML has been set
     document.getElementById('add-friend-btn').addEventListener('click', () => friendModal.classList.remove('hidden'));
     document.querySelectorAll('.remove-friend-btn').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -530,7 +554,9 @@ function renderGoalEditList() {
         `).join('');
     }
     container.querySelectorAll('input').forEach(input => {
-        input.addEventListener('change', (e) => {
+        // --- CHANGE 2: Switched 'change' to 'blur' to prevent data loss race condition ---
+        // This now only saves when the user clicks away from the input, which is safer.
+        input.addEventListener('blur', (e) => {
             const id = e.target.closest('[data-goal-id]').dataset.goalId;
             const field = e.target.dataset.field;
             const value = (e.target.type === 'number') ? parseFloat(e.target.value) || 0 : e.target.value;
@@ -958,4 +984,4 @@ function init() {
 
 // --- RUN ---
 init();
-
+```
