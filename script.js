@@ -280,6 +280,67 @@ async function renderFriends() {
     });
 }
 
+
+// --- SECTION: HELPER & UI FUNCTIONS ---
+
+function handleModTypeChange() {
+    const selectedType = modTypeSelect.value;
+    const container = document.getElementById('dynamic-fields-container');
+    let fieldsHtml = '';
+
+    if (selectedType === 'stretch') {
+        fieldsHtml = `
+            <div class="md:col-span-2">
+                <label for="stretch-type" class="block text-sm font-medium mb-1">Stretch Type</label>
+                <select id="stretch-type" class="w-full p-2 border border-gray-300 rounded-md">
+                    <option value="up">Stretch Up</option>
+                    <option value="downsize">Downsize</option>
+                    <option value="maintenance">Maintenance</option>
+                </select>
+            </div>
+            <div>
+                <label for="stretch-size" class="block text-sm font-medium mb-1">Current Size (mm or g)</label>
+                <input type="text" id="stretch-size" placeholder="e.g., 1.6mm / 14g" class="w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+                <label for="stretch-irritation" class="block text-sm font-medium mb-1">Irritation (1=None, 5=Severe)</label>
+                <input type="range" id="stretch-irritation" min="1" max="5" value="1" class="w-full">
+            </div>`;
+    } else if (selectedType === 'tattoo') {
+        fieldsHtml = `
+             <div><label for="tattoo-placement" class="block text-sm font-medium mb-1">Placement</label><input type="text" id="tattoo-placement" placeholder="e.g., Left forearm" class="w-full p-2 border border-gray-300 rounded-md"></div>
+             <div><label for="tattoo-artist" class="block text-sm font-medium mb-1">Artist</label><input type="text" id="tattoo-artist" placeholder="e.g., Jane Doe" class="w-full p-2 border border-gray-300 rounded-md"></div>
+             <div><label for="tattoo-studio" class="block text-sm font-medium mb-1">Studio</label><input type="text" id="tattoo-studio" placeholder="e.g., Inked Up" class="w-full p-2 border border-gray-300 rounded-md"></div>
+             <div><label for="tattoo-duration" class="block text-sm font-medium mb-1">Session Duration (minutes)</label><input type="number" id="tattoo-duration" placeholder="e.g., 240" class="w-full p-2 border border-gray-300 rounded-md"></div>`;
+    } else if (selectedType === 'piercing') {
+        fieldsHtml = `
+            <div><label for="piercing-type" class="block text-sm font-medium mb-1">Type of Piercing</label><input type="text" id="piercing-type" placeholder="e.g., Septum, Nostril" class="w-full p-2 border border-gray-300 rounded-md"></div>
+            <div><label for="piercing-placement" class="block text-sm font-medium mb-1">Placement / Side</label><input type="text" id="piercing-placement" placeholder="e.g., Left, Right, Center" class="w-full p-2 border border-gray-300 rounded-md"></div>
+            <div class="md:col-span-2"><label for="piercing-log-type" class="block text-sm font-medium mb-1">Log Type</label><select id="piercing-log-type" class="w-full p-2 border border-gray-300 rounded-md"><option value="new">New Piercing</option><option value="jewelry_change">Jewelry Change</option></select></div>
+            <div id="jewelry-fields" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div><label for="jewelry-material" class="block text-sm font-medium mb-1">Jewelry Material</label><input type="text" id="jewelry-material" placeholder="e.g., Titanium" class="w-full p-2 border border-gray-300 rounded-md"></div>
+                 <div><label for="jewelry-description" class="block text-sm font-medium mb-1">Brand / Description</label><input type="text" id="jewelry-description" placeholder="e.g., BVLA" class="w-full p-2 border border-gray-300 rounded-md"></div>
+            </div>
+            `;
+    } else if (selectedType === 'care') {
+        fieldsHtml = `<p class="text-sm text-gray-500 md:col-span-2">Log your daily massage, oiling, or cleaning routine to track healthy habits.</p>`;
+    }
+    container.innerHTML = fieldsHtml;
+
+    // Add listener for piercing log type to show/hide jewelry fields
+    if (selectedType === 'piercing') {
+        const piercingLogTypeSelect = document.getElementById('piercing-log-type');
+        const jewelryFields = document.getElementById('jewelry-fields');
+        piercingLogTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'jewelry_change') {
+                jewelryFields.classList.remove('hidden');
+            } else {
+                jewelryFields.classList.add('hidden');
+            }
+        });
+    }
+}
+
 // --- SECTION: INITIALIZATION & EVENT LISTENERS ---
 function init() {
     if (!auth) return;
@@ -899,4 +960,7 @@ function clearAllData() {
 // --- RUN ---
 init();
 handleModTypeChange();
+" with a syntax error in it, specifically "if (latestLog.mod_type === 'piercing') details = latestLog.piercing_type ||." and I am pointing it out. 
+The error is:
+Uncaught SyntaxError: Unexpected token '.'
 
