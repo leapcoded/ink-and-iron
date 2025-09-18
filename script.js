@@ -429,5 +429,470 @@ function updateDashboard() {
         let details = 'N/A';
         if (latestLog.mod_type === 'stretch') details = latestLog.size || 'N/A';
         if (latestLog.mod_type === 'tattoo') details = latestLog.placement || 'N/A';
-        if (latestLog.mod_type === 'piercing') details = latestLog.piercing_type ||.
+        if (latestLog.mod_type === 'piercing') details = latestLog.piercing_type || 'N/A';
+        document.getElementById('current-mod-details').textContent = details;
+        document.getElementById('last-mod-date').textContent = new Date(latestLog.date + 'T00:00:00').toLocaleDateString();
+    } else {
+        // Reset if no logs
+        document.getElementById('current-mod-type').textContent = 'N/A';
+        document.getElementById('current-mod-details').textContent = 'N/A';
+        document.getElementById('last-mod-date').textContent = 'N/A';
+    }
+
+    // Find the latest "stretch up" log specifically for the recommendation
+    const stretchUpLogs = allLogs.filter(log => log.mod_type === 'stretch' && log.stretch_type === 'up');
+    const latestStretchUpLog = stretchUpLogs.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    const nextStretchContainer = document.getElementById('next-stretch-container');
+
+    if (latestStretchUpLog) {
+        const lastStretchDate = new Date(latestStretchUpLog.date + 'T00:00:00');
+        const lastSizeMM = parseSizeToMM(latestStretchUpLog.size);
+        let waitDays;
+
+        if (lastSizeMM < 2.5) { // Up to 10g (2.5mm)
+            waitDays = 45; // 1.5+ months
+        } else if (lastSizeMM < 4) { // Up to 6g (4mm)
+            waitDays = 75; // ~2.5 months
+        } else if (lastSizeMM < 7) { // Up to 2g (6mm) -> 1g is 7mm
+            waitDays = 150; // ~5 months
+        } else { // For larger sizes, maintain a long wait
+            waitDays = 180; // 6+ months
+        }
+        
+        const nextDate = new Date(lastStretchDate);
+        nextDate.setDate(nextDate.getDate() + waitDays);
+        
+        document.getElementById('next-stretch-date').textContent = nextDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + ` (after ${waitDays} days)`;
+        nextStretchContainer.classList.remove('hidden');
+    } else {
+        nextStretchContainer.classList.add('hidden');
+    }
+}
+
+
+function renderGoals() {
+    const container = document.getElementById('goal-list-container');
+    const goals = userSettings.goals || [];
+    if (goals.length === 0) {
+        container.innerHTML = `<p class="text-sm text-center text-gray-400 p-4">Click "Add / Edit" to start tracking your progress!</p>`;
+        return;
+    }
+
+    container.innerHTML = goals.map(goal => {
+        const percentage = Math.max(0, Math.min(((goal.current || 0) / (goal.target || 1)) * 100, 100));
+        return `
+            <div>
+                <div class="flex justify-between items-center text-sm mb-1">
+                    <span class="font-semibold">${goal.title}</span>
+                    <span class="text-gray-500">${goal.current || 0} / ${goal.target || 0} ${goal.unit || ''}</span>
+                </div>
+                <div class="progress-bar-bg w-full h-3 rounded-full overflow-hidden">
+                    <div class="progress-bar-fill h-full" style="width: ${percentage}%;"></div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+
+function renderLogs() {
+    const container = document.getElementById('logbook-content');
+    if (!container) return;
+
+    // Filter logs based on the current filter state
+    const filteredLogs = allLogs.filter(log => currentLogFilter === 'all' || log.mod_type === currentLogFilter);
+    // Sort filtered logs by date
+    const sortedFilteredLogs = filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+
+    const filterButtonsHtml = `
+        <div class="flex justify-center gap-2 mb-6">
+            <button class="log-filter-btn ${currentLogFilter === 'all' ? 'active' : ''}" data-filter="all">All</button>
+            <button class="log-filter-btn ${currentLogFilter === 'stretch' ? 'active' : ''}" data-filter="stretch">Stretch</button>
+            <button class="log-filter-btn ${currentLogFilter === 'tattoo' ? 'active' : ''}" data-filter="tattoo">Tattoo</button>
+            <button class="log-filter-btn ${currentLogFilter === 'piercing' ? 'active' : ''}" data-filter="piercing">Piercing</button>
+            <button class="log-filter-btn ${currentLogFilter === 'care' ? 'active' : ''}" data-filter="care">Care</button>
+        </div>
+    `;
+
+    if (sortedFilteredLogs.length === 0) {
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold mb-4 mt-8 text-center">Your Logbook</h2>
+            ${filterButtonsHtml}
+            <div class="text-center py-10 px-6 card"><p class="text-gray-500">You haven't logged any activity for this category yet.</p></div>`;
+    } else {
+        const logEntriesHtml = sortedFilteredLogs.map(log => {
+            const date = new Date(log.date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            let detailsHtml = '';
+
+            switch (log.mod_type) {
+                case 'stretch':
+                    detailsHtml = `
+                        <p><strong>Type:</strong> <span class="capitalize">${log.stretch_type || 'N/A'}</span></p>
+                        <p><strong>Size:</strong> ${log.size || 'N/A'}</p>
+                        <p><strong>Irritation:</strong> ${log.irritation || '1'}/5</p>
+                    `;
+                    break;
+                case 'tattoo':
+                    detailsHtml = `
+                        <p><strong>Placement:</strong> ${log.placement || 'N/A'}</p>
+                        <p><strong>Artist:</strong> ${log.artist || 'N/A'}</p>
+                        <p><strong>Duration:</strong> ${log.duration ? `${log.duration} minutes` : 'N/A'}</p>
+                    `;
+                    break;
+                case 'piercing':
+                    detailsHtml = `
+                        <p><strong>Type:</strong> ${log.piercing_type || 'N/A'}</p>
+                        <p><strong>Placement:</strong> ${log.placement || 'N/A'}</p>
+                        <p><strong>Log Type:</strong> <span class="capitalize">${(log.piercing_log_type || 'N/A').replace('_', ' ')}</span></p>
+                    `;
+                    if (log.piercing_log_type === 'jewelry_change') {
+                        detailsHtml += `
+                            <p><strong>Jewelry Material:</strong> ${log.jewelry_material || 'N/A'}</p>
+                            <p><strong>Jewelry Info:</strong> ${log.jewelry_description || 'N/A'}</p>
+                        `;
+                    }
+                    break;
+                case 'care':
+                     detailsHtml = `<p>Logged a care routine.</p>`;
+                     break;
+            }
+
+            return `
+                <div class="card mb-4 overflow-hidden">
+                    <div class="flex flex-col md:flex-row">
+                        ${log.photoURL ? `<img src="${log.photoURL}" class="w-full md:w-48 h-48 object-cover" alt="Log entry photo">` : ''}
+                        <div class="p-4 flex-grow">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-lg capitalize">${log.mod_type}</h3>
+                                    <p class="text-sm text-gray-500">${date}</p>
+                                </div>
+                            </div>
+                            <div class="text-sm space-y-1 mb-3">${detailsHtml}</div>
+                            ${log.notes ? `<p class="text-sm italic bg-gray-50 p-2 rounded-md">"${log.notes}"</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold mb-4 mt-8 text-center">Your Logbook</h2>
+            ${filterButtonsHtml}
+            ${logEntriesHtml}
+        `;
+    }
+    
+    // Add event listeners to the new filter buttons
+    document.querySelectorAll('.log-filter-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            currentLogFilter = e.target.dataset.filter;
+            renderLogs(); // Re-render the logs with the new filter
+        });
+    });
+}
+
+function renderGallery() {
+    const container = document.getElementById('gallery-content');
+    if (!container) return;
+
+    const logsWithPhotos = allLogs.filter(log => log.photoURL).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (logsWithPhotos.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 px-6 card"><p class="text-gray-500">You haven't logged any photos yet. Add a photo to a log entry to see it here!</p></div>`;
+        return;
+    }
+    
+    const galleryHtml = `
+        <h2 class="text-3xl font-bold mb-6 text-center">Your Gallery</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            ${logsWithPhotos.map(log => `
+                <div class="cursor-pointer group gallery-item">
+                    <img src="${log.photoURL}" alt="Gallery image for ${log.mod_type}" class="w-full h-48 object-cover rounded-lg shadow-md group-hover:shadow-xl transition-shadow">
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    container.innerHTML = galleryHtml;
+
+    // Add click listeners to open modal
+    container.querySelectorAll('.gallery-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const imgSrc = item.querySelector('img').src;
+            const imgAlt = item.querySelector('img').alt;
+            openModal(`
+                <div class="text-center">
+                    <img src="${imgSrc}" alt="${imgAlt}" class="max-w-full max-h-[80vh] mx-auto rounded-lg">
+                    <div class="mt-4">
+                        <button data-action="close" class="btn-primary font-bold py-2 px-6 rounded-md">Close</button>
+                    </div>
+                </div>
+            `);
+        });
+    });
+}
+
+function renderJewelryCollection() {
+    const container = document.getElementById('jewelry-content');
+    if (!container) return;
+
+    const jewelryLogs = allLogs.filter(log => log.piercing_log_type === 'jewelry_change').sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (jewelryLogs.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 px-6 card"><p class="text-gray-500">You haven't logged any jewelry changes yet. Log a piercing with the "Jewelry Change" type to start your collection!</p></div>`;
+        return;
+    }
+    
+    const jewelryHtml = `
+        <h2 class="text-3xl font-bold mb-6 text-center">Your Jewelry Collection</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${jewelryLogs.map(log => `
+                <div class="card flex items-start gap-4 p-4">
+                    ${log.photoURL ? `<img src="${log.photoURL}" class="w-24 h-24 object-cover rounded-md">` : ''}
+                    <div class="text-sm">
+                        <p class="font-bold">${log.jewelry_description || 'Unnamed Piece'}</p>
+                        <p><strong>For:</strong> ${log.piercing_type || 'N/A'}</p>
+                        <p><strong>Material:</strong> ${log.jewelry_material || 'N/A'}</p>
+                        <p class="text-xs text-gray-500 mt-1">Logged on ${new Date(log.date + 'T00:00:00').toLocaleDateString()}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    container.innerHTML = jewelryHtml;
+}
+
+function renderStats() {
+    const container = document.getElementById('stats-content');
+    if (!container) return;
+
+    if (allLogs.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 px-6 card"><p class="text-gray-500">Log some activity to see your stats here!</p></div>`;
+        return;
+    }
+
+    // Calculate stats
+    const totalLogs = allLogs.length;
+    const logTypes = allLogs.reduce((acc, log) => {
+        acc[log.mod_type] = (acc[log.mod_type] || 0) + 1;
+        return acc;
+    }, {});
+    
+    const stretchLogs = allLogs.filter(l => l.mod_type === 'stretch' && l.stretch_type === 'up');
+    const largestStretch = stretchLogs.reduce((max, log) => {
+        const currentMM = parseSizeToMM(log.size);
+        return currentMM > max.mm ? { size: log.size, mm: currentMM } : max;
+    }, { size: 'N/A', mm: 0 });
+
+    const totalTattooTime = allLogs
+        .filter(l => l.mod_type === 'tattoo' && l.duration)
+        .reduce((total, log) => total + parseInt(log.duration), 0);
+    const totalTattooHours = Math.floor(totalTattooTime / 60);
+    const totalTattooMinutes = totalTattooTime % 60;
+    
+    const firstLogDate = allLogs.length > 0 ? new Date(allLogs.sort((a,b) => new Date(a.date) - new Date(b.date))[0].date + 'T00:00:00') : new Date();
+    const daysSinceFirstLog = Math.floor((new Date() - firstLogDate) / (1000 * 60 * 60 * 24));
+
+    const statsHtml = `
+        <h2 class="text-3xl font-bold mb-6 text-center">Your Stats</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${totalLogs}</p>
+                <p class="text-sm text-gray-500">Total Logs</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${logTypes.stretch || 0}</p>
+                <p class="text-sm text-gray-500">Stretches</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${logTypes.tattoo || 0}</p>
+                <p class="text-sm text-gray-500">Tattoos</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${logTypes.piercing || 0}</p>
+                <p class="text-sm text-gray-500">Piercings</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${largestStretch.size}</p>
+                <p class="text-sm text-gray-500">Largest Stretch</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${totalTattooHours}<span class="text-xl">h</span> ${totalTattooMinutes}<span class="text-xl">m</span></p>
+                <p class="text-sm text-gray-500">Time Under the Needle</p>
+            </div>
+             <div class="card p-4 col-span-2 md:col-span-3">
+                <p class="text-3xl font-bold">${daysSinceFirstLog}</p>
+                <p class="text-sm text-gray-500">Days Since First Log</p>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = statsHtml;
+}
+
+function renderAchievements() {
+    const container = document.getElementById('achievements-content');
+    if (!container) return;
+
+    const unlockedKeys = Object.keys(userSettings.achievements || {});
+
+    if (unlockedKeys.length === 0) {
+        container.innerHTML = `
+            <h2 class="text-3xl font-bold mb-6 text-center">Your Achievements</h2>
+            <div class="text-center py-10 px-6 card">
+                <p class="text-gray-500">Your achievements will appear here as you unlock them. Keep logging your journey!</p>
+            </div>`;
+        return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'grid grid-cols-2 md:grid-cols-4 gap-4';
+
+    // Iterate through the original master list to maintain a logical order
+    for (const key in allAchievements) {
+        if (unlockedKeys.includes(key)) {
+            const achievement = allAchievements[key];
+            const card = document.createElement('div');
+            card.className = `card p-4 text-center achievement-card unlocked`;
+            card.innerHTML = `
+                <p class="text-4xl mb-2">${achievement.icon}</p>
+                <p class="font-bold">${achievement.title}</p>
+                <p class="text-xs" style="color: var(--text-secondary);">${achievement.description}</p>`;
+            grid.appendChild(card);
+        }
+    }
+
+    container.innerHTML = `<h2 class="text-3xl font-bold mb-6 text-center">Your Achievements</h2>`;
+    container.appendChild(grid);
+}
+
+
+function showAchievementModal(achievement) {
+    openModal(`
+         <div class="text-center">
+            <p class="text-6xl mb-4">${achievement.icon}</p>
+            <h2 class="text-2xl font-bold mb-2">Achievement Unlocked!</h2>
+            <p class="font-semibold">${achievement.title}</p>
+            <p style="color: var(--text-secondary);">${achievement.description}</p>
+            <div class="mt-6"><button data-action="close" class="btn-primary font-bold py-2 px-6 rounded-md">Awesome!</button></div>
+        </div>
+    `);
+}
+
+function openModal(content) {
+    mainModal.innerHTML = `<div class="modal-content card">${content}</div>`;
+    mainModal.classList.remove('hidden');
+    const closeButton = mainModal.querySelector('[data-action="close"]');
+    if (closeButton) closeButton.addEventListener('click', closeModal);
+}
+const closeModal = () => mainModal.classList.add('hidden');
+
+async function handleLogSubmit(e) {
+    e.preventDefault();
+    if (!userId) return;
+    const btn = document.getElementById('log-mod-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    
+    try {
+        const photoFile = document.getElementById('log-photo').files[0];
+        let photoURL = null, storagePath = null;
+        if (photoFile) {
+            storagePath = `users/${userId}/log_images/${Date.now()}-${photoFile.name}`;
+            const storageRef = ref(storage, storagePath);
+            await uploadBytes(storageRef, photoFile);
+            photoURL = await getDownloadURL(storageRef);
+        }
+
+        const modType = document.getElementById('mod-type').value;
+        let logData = {
+            date: document.getElementById('log-date').value,
+            notes: document.getElementById('log-notes').value,
+            mod_type: modType,
+            photoURL, storagePath,
+            createdAt: serverTimestamp(),
+        };
+
+        if (modType === 'stretch') {
+            logData.stretch_type = document.getElementById('stretch-type').value;
+            logData.size = document.getElementById('stretch-size').value;
+            logData.irritation = document.getElementById('stretch-irritation').value;
+        } else if (modType === 'tattoo') {
+            logData.placement = document.getElementById('tattoo-placement').value;
+            logData.artist = document.getElementById('tattoo-artist').value;
+            logData.studio = document.getElementById('tattoo-studio').value;
+            logData.duration = document.getElementById('tattoo-duration').value;
+        } else if (modType === 'piercing') {
+             logData.piercing_type = document.getElementById('piercing-type').value;
+             logData.placement = document.getElementById('piercing-placement').value;
+             logData.piercing_log_type = document.getElementById('piercing-log-type').value;
+             if (logData.piercing_log_type === 'jewelry_change') {
+                logData.jewelry_material = document.getElementById('jewelry-material').value;
+                logData.jewelry_description = document.getElementById('jewelry-description').value;
+             }
+        }
+        
+        await addDoc(collection(db, `users/${userId}/logs`), logData);
+        logForm.reset();
+        document.getElementById('log-date').valueAsDate = new Date();
+        handleModTypeChange();
+    } catch (error) {
+        console.error("Error saving log:", error);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Log Entry';
+    }
+}
+
+async function saveSetting(key, value) {
+    if (!userId) return;
+    const settingsRef = doc(db, `users/${userId}/settings/main`);
+    await setDoc(settingsRef, { [key]: value }, { merge: true });
+}
+
+function parseSizeToMM(sizeString) {
+    if (!sizeString) return 0;
+    const s = String(sizeString).toLowerCase();
+    if (s.includes('g')) {
+        const gauge = parseInt(s.match(/-?\d+/)?.[0] || '0');
+        const gaugeMap = { 14: 1.6, 12: 2, 10: 2.5, 8: 3.2, 6: 4, 4: 5, 2: 6, 0: 8, '00': 10 };
+        return gaugeMap[gauge] || (gaugeMap[s.replace('g','')] || 0);
+    }
+    if (s.includes('/')) {
+        const parts = s.replace('"', '').split(/[\s+]/).filter(Boolean);
+        let mm = 0;
+        parts.forEach(part => {
+            if (part.includes('/')) {
+                const fraction = part.split('/');
+                mm += (parseFloat(fraction[0]) / parseFloat(fraction[1])) * 25.4;
+            } else {
+                mm += parseFloat(part) * 25.4;
+            }
+        });
+        return mm;
+    }
+    const match = s.match(/(\d+(\.\d+)?)/);
+    return match ? parseFloat(match[0]) : 0;
+}
+
+function clearAllData() {
+    allLogs = [];
+    userSettings = { achievements: {}, usedThemes: [], goals:[], friends: [] };
+    updateDashboard();
+    renderStats();
+    renderAchievements();
+    renderLogs();
+    renderGoals();
+    renderGallery();
+    renderJewelryCollection();
+}
+
+// --- RUN ---
+init();
+handleModTypeChange();
+" with a syntax error in it, specifically "if (latestLog.mod_type === 'piercing') details = latestLog.piercing_type ||." and I am pointing it out. 
+The error is:
+Uncaught SyntaxError: Unexpected token '.'
 
