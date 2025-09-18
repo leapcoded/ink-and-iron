@@ -215,6 +215,7 @@ function init() {
     setupTabListeners();
     setupThemeSwitcher();
     setupGoalModalListeners();
+    handleModTypeChange(); // Call on init
 }
 
 function setupTabListeners() {
@@ -272,11 +273,29 @@ function handleModTypeChange() {
         fieldsHtml = `
             <div><label for="piercing-type" class="block text-sm font-medium mb-1">Type of Piercing</label><input type="text" id="piercing-type" placeholder="e.g., Septum, Nostril" class="w-full p-2 border border-gray-300 rounded-md"></div>
             <div><label for="piercing-placement" class="block text-sm font-medium mb-1">Placement / Side</label><input type="text" id="piercing-placement" placeholder="e.g., Left, Right, Center" class="w-full p-2 border border-gray-300 rounded-md"></div>
-            <div class="md:col-span-2"><label for="piercing-log-type" class="block text-sm font-medium mb-1">Log Type</label><select id="piercing-log-type" class="w-full p-2 border border-gray-300 rounded-md"><option value="new">New Piercing</option><option value="jewelry_change">Jewelry Change</option></select></div>`;
+            <div class="md:col-span-2"><label for="piercing-log-type" class="block text-sm font-medium mb-1">Log Type</label><select id="piercing-log-type" class="w-full p-2 border border-gray-300 rounded-md"><option value="new">New Piercing</option><option value="jewelry_change">Jewelry Change</option></select></div>
+            <div id="jewelry-fields" class="hidden md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div><label for="jewelry-material" class="block text-sm font-medium mb-1">Jewelry Material</label><input type="text" id="jewelry-material" placeholder="e.g., Titanium" class="w-full p-2 border border-gray-300 rounded-md"></div>
+                 <div><label for="jewelry-description" class="block text-sm font-medium mb-1">Brand / Description</label><input type="text" id="jewelry-description" placeholder="e.g., BVLA" class="w-full p-2 border border-gray-300 rounded-md"></div>
+            </div>
+            `;
     } else if (selectedType === 'care') {
         fieldsHtml = `<p class="text-sm text-gray-500 md:col-span-2">Log your daily massage, oiling, or cleaning routine to track healthy habits.</p>`;
     }
     container.innerHTML = fieldsHtml;
+
+    // Add listener for piercing log type to show/hide jewelry fields
+    if (selectedType === 'piercing') {
+        const piercingLogTypeSelect = document.getElementById('piercing-log-type');
+        const jewelryFields = document.getElementById('jewelry-fields');
+        piercingLogTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'jewelry_change') {
+                jewelryFields.classList.remove('hidden');
+            } else {
+                jewelryFields.classList.add('hidden');
+            }
+        });
+    }
 }
 
 // --- SECTION: GOAL MANAGEMENT ---
@@ -359,13 +378,26 @@ function updateDashboard() {
         document.getElementById('last-mod-date').textContent = new Date(latestLog.date + 'T00:00:00').toLocaleDateString();
 
         const nextStretchContainer = document.getElementById('next-stretch-container');
-        if (latestLog.mod_type === 'stretch' && latestLog.stretch_type !== 'maintenance') {
+        if (latestLog.mod_type === 'stretch' && latestLog.stretch_type === 'up') {
             const lastStretchDate = new Date(latestLog.date + 'T00:00:00');
-            const waitDays = parseSizeToMM(latestLog.size) < 8 ? 60 : 90; 
+            const lastSizeMM = parseSizeToMM(latestLog.size);
+            let waitDays;
+
+            // Using the new, more detailed wait times based on the provided image
+            if (lastSizeMM < 2.5) { // Up to 10g (2.5mm)
+                waitDays = 45; // 1.5+ months
+            } else if (lastSizeMM < 4) { // Up to 6g (4mm)
+                waitDays = 75; // ~2.5 months
+            } else if (lastSizeMM < 7) { // Up to 2g (6mm) -> 1g is 7mm
+                waitDays = 150; // ~5 months
+            } else { // For larger sizes, maintain a long wait
+                waitDays = 180; // 6+ months
+            }
+            
             const nextDate = new Date(lastStretchDate);
             nextDate.setDate(nextDate.getDate() + waitDays);
             
-            document.getElementById('next-stretch-date').textContent = nextDate.toLocaleDateString();
+            document.getElementById('next-stretch-date').textContent = nextDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + ` (after ${waitDays} days)`;
             nextStretchContainer.classList.remove('hidden');
         } else {
             nextStretchContainer.classList.add('hidden');
@@ -436,6 +468,12 @@ function renderLogs() {
                     <p><strong>Placement:</strong> ${log.placement || 'N/A'}</p>
                     <p><strong>Log Type:</strong> <span class="capitalize">${(log.piercing_log_type || 'N/A').replace('_', ' ')}</span></p>
                 `;
+                if (log.piercing_log_type === 'jewelry_change') {
+                    detailsHtml += `
+                        <p><strong>Jewelry Material:</strong> ${log.jewelry_material || 'N/A'}</p>
+                        <p><strong>Jewelry Info:</strong> ${log.jewelry_description || 'N/A'}</p>
+                    `;
+                }
                 break;
             case 'care':
                  detailsHtml = `<p>Logged a care routine.</p>`;
@@ -463,7 +501,73 @@ function renderLogs() {
 
     container.innerHTML = `<h2 class="text-2xl font-bold mb-4 mt-8">Your Logbook</h2>${logEntriesHtml}`;
 }
-function renderStats() { /* For future implementation */ }
+function renderStats() {
+    const container = document.getElementById('stats-content');
+    if (!container) return;
+
+    if (allLogs.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 px-6 card"><p class="text-gray-500">Log some activity to see your stats here!</p></div>`;
+        return;
+    }
+
+    // Calculate stats
+    const totalLogs = allLogs.length;
+    const logTypes = allLogs.reduce((acc, log) => {
+        acc[log.mod_type] = (acc[log.mod_type] || 0) + 1;
+        return acc;
+    }, {});
+    
+    const stretchLogs = allLogs.filter(l => l.mod_type === 'stretch' && l.stretch_type === 'up');
+    const largestStretch = stretchLogs.reduce((max, log) => {
+        const currentMM = parseSizeToMM(log.size);
+        return currentMM > max.mm ? { size: log.size, mm: currentMM } : max;
+    }, { size: 'N/A', mm: 0 });
+
+    const totalTattooTime = allLogs
+        .filter(l => l.mod_type === 'tattoo' && l.duration)
+        .reduce((total, log) => total + parseInt(log.duration), 0);
+    const totalTattooHours = Math.floor(totalTattooTime / 60);
+    const totalTattooMinutes = totalTattooTime % 60;
+    
+    const firstLogDate = allLogs.length > 0 ? new Date(allLogs[allLogs.length - 1].date + 'T00:00:00') : new Date();
+    const daysSinceFirstLog = Math.floor((new Date() - firstLogDate) / (1000 * 60 * 60 * 24));
+
+    const statsHtml = `
+        <h2 class="text-3xl font-bold mb-6 text-center">Your Stats</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${totalLogs}</p>
+                <p class="text-sm text-gray-500">Total Logs</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${logTypes.stretch || 0}</p>
+                <p class="text-sm text-gray-500">Stretches</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${logTypes.tattoo || 0}</p>
+                <p class="text-sm text-gray-500">Tattoos</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${logTypes.piercing || 0}</p>
+                <p class="text-sm text-gray-500">Piercings</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${largestStretch.size}</p>
+                <p class="text-sm text-gray-500">Largest Stretch</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-3xl font-bold">${totalTattooHours}<span class="text-xl">h</span> ${totalTattooMinutes}<span class="text-xl">m</span></p>
+                <p class="text-sm text-gray-500">Time Under the Needle</p>
+            </div>
+             <div class="card p-4 col-span-2 md:col-span-3">
+                <p class="text-3xl font-bold">${daysSinceFirstLog}</p>
+                <p class="text-sm text-gray-500">Days Since First Log</p>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = statsHtml;
+}
 
 function renderAchievements() {
     const container = document.getElementById('achievements-content');
@@ -545,6 +649,10 @@ async function handleLogSubmit(e) {
              logData.piercing_type = document.getElementById('piercing-type').value;
              logData.placement = document.getElementById('piercing-placement').value;
              logData.piercing_log_type = document.getElementById('piercing-log-type').value;
+             if (logData.piercing_log_type === 'jewelry_change') {
+                logData.jewelry_material = document.getElementById('jewelry-material').value;
+                logData.jewelry_description = document.getElementById('jewelry-description').value;
+             }
         }
         
         await addDoc(collection(db, `users/${userId}/logs`), logData);
@@ -603,5 +711,4 @@ function clearAllData() {
 // --- RUN ---
 init();
 handleModTypeChange();
-
 
