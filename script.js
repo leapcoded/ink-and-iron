@@ -402,7 +402,67 @@ function renderGoals() {
 }
 
 
-function renderLogs() { /* For future implementation */ }
+function renderLogs() {
+    const container = document.getElementById('log-container');
+    if (!container) return;
+
+    if (allLogs.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 px-6 card"><p class="text-gray-500">You haven't logged any activity yet. Fill out the form above to get started!</p></div>`;
+        return;
+    }
+
+    const logEntriesHtml = allLogs.map(log => {
+        const date = new Date(log.date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        let detailsHtml = '';
+
+        switch (log.mod_type) {
+            case 'stretch':
+                detailsHtml = `
+                    <p><strong>Type:</strong> <span class="capitalize">${log.stretch_type || 'N/A'}</span></p>
+                    <p><strong>Size:</strong> ${log.size || 'N/A'}</p>
+                    <p><strong>Irritation:</strong> ${log.irritation || '1'}/5</p>
+                `;
+                break;
+            case 'tattoo':
+                detailsHtml = `
+                    <p><strong>Placement:</strong> ${log.placement || 'N/A'}</p>
+                    <p><strong>Artist:</strong> ${log.artist || 'N/A'}</p>
+                    <p><strong>Duration:</strong> ${log.duration ? `${log.duration} minutes` : 'N/A'}</p>
+                `;
+                break;
+            case 'piercing':
+                detailsHtml = `
+                    <p><strong>Type:</strong> ${log.piercing_type || 'N/A'}</p>
+                    <p><strong>Placement:</strong> ${log.placement || 'N/A'}</p>
+                    <p><strong>Log Type:</strong> <span class="capitalize">${(log.piercing_log_type || 'N/A').replace('_', ' ')}</span></p>
+                `;
+                break;
+            case 'care':
+                 detailsHtml = `<p>Logged a care routine.</p>`;
+                 break;
+        }
+
+        return `
+            <div class="card mb-4 overflow-hidden">
+                <div class="flex flex-col md:flex-row">
+                    ${log.photoURL ? `<img src="${log.photoURL}" class="w-full md:w-48 h-48 object-cover" alt="Log entry photo">` : ''}
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-lg capitalize">${log.mod_type}</h3>
+                                <p class="text-sm text-gray-500">${date}</p>
+                            </div>
+                        </div>
+                        <div class="text-sm space-y-1 mb-3">${detailsHtml}</div>
+                        ${log.notes ? `<p class="text-sm italic bg-gray-50 p-2 rounded-md">"${log.notes}"</p>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `<h2 class="text-2xl font-bold mb-4 mt-8">Your Logbook</h2>${logEntriesHtml}`;
+}
 function renderStats() { /* For future implementation */ }
 
 function renderAchievements() {
