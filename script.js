@@ -8,7 +8,7 @@ import { achievements as allAchievements } from './achievements.js';
 // --- SECTION: FIREBASE & APP INITIALIZATION ---
 let app, auth, db, storage;
 try {
-    const firebaseConfig = JSON.parse('{apiKey:AIzaSyB3LsKkKZGwCCNyRvDeO-CAICe0aYmEKuQ,authDomain:my-stretching-tracker.firebaseapp.com,projectId:my-stretching-tracker,storageBucket:my-stretching-tracker.firebasestorage.app,messagingSenderId:975152398329,appId:1:975152398329:web:68eefa4978c55dff630728}');
+    const firebaseConfig = JSON.parse({"apiKey":"AIzaSyB3LsKkKZGwCCNyRvDeO-CAICe0aYmEKuQ","authDomain":"my-stretching-tracker.firebaseapp.com","projectId":"my-stretching-tracker","storageBucket":"my-stretching-tracker.firebasestorage.app","messagingSenderId":"975152398329","appId":"1:975152398329:web:68eefa4978c55dff630728"});
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
