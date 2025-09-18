@@ -8,7 +8,7 @@ import { achievements as allAchievements } from './achievements.js';
 // --- SECTION: FIREBASE & APP INITIALIZATION ---
 let app, auth, db, storage;
 try {
-    const firebaseConfig = JSON.parse('%%FIREBASE_CONFIG_PLACEHOLDER%%');
+    const firebaseConfig = %%FIREBASE_CONFIG_PLACEHOLDER%%;
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
