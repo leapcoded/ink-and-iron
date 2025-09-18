@@ -3,26 +3,27 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main # Or your default branch
+      - main # Deploys every time you push to the main branch.
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Allows the action to commit to the repo
+      contents: write # Necessary for the action to push to your gh-pages branch.
     steps:
+      # 1. Checks out your repository code.
       - name: Checkout 🛎️
         uses: actions/checkout@v4
 
+      # 2. This is the critical step. It finds and replaces the placeholder.
       - name: Inject Firebase Config 🤫
         run: |
-          # The -i flag modifies the file in place.
-          # The quotes around the secret are important.
           sed -i "s|'%%FIREBASE_CONFIG_PLACEHOLDER%%'|'${{ secrets.FIREBASE_CONFIG }}'|" script.js
 
+      # 3. Deploys the modified code to the gh-pages branch.
       - name: Deploy 🚀
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./ # Deploy the root directory
-          publish_branch: gh-pages # Deploy to the gh-pages branch.
+          publish_dir: ./ # Correctly deploys all files from the root.
+          publish_branch: gh-pages
