@@ -10,13 +10,13 @@ let app, auth, db, storage;
 try {
     // This object will be populated by the deployment script
     const firebaseConfig = {
-      apiKey: "%%API_KEY%%",
-      authDomain: "%%AUTH_DOMAIN%%",
-      projectId: "%%PROJECT_ID%%",
-      storageBucket: "%%STORAGE_BUCKET%%",
-      messagingSenderId: "%%MESSAGING_SENDER_ID%%",
-      appId: "%%APP_ID%%",
-      measurementId: "%%MEASUREMENT_ID%%"
+      apiKey: "",
+      authDomain: "",
+      projectId: "",
+      storageBucket: "",
+      messagingSenderId: "",
+      appId: "",
+      measurementId: ""
     };
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
