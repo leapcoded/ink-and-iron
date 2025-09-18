@@ -121,7 +121,9 @@ const fetchLogs = () => {
     unsubscribeLogs = onSnapshot(q, snapshot => {
         allLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         updateDashboard();
-        renderLogs(); // Initial render
+        renderLogs();
+        renderGallery();
+        renderJewelryCollection();
         renderStats();
         checkAchievements();
     }, error => console.error("Error fetching logs:", error));
@@ -539,6 +541,62 @@ function renderLogs() {
     });
 }
 
+function renderGallery() {
+    const container = document.getElementById('gallery-content');
+    if (!container) return;
+
+    const logsWithPhotos = allLogs.filter(log => log.photoURL).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (logsWithPhotos.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 px-6 card"><p class="text-gray-500">You haven't logged any photos yet. Add a photo to a log entry to see it here!</p></div>`;
+        return;
+    }
+    
+    const galleryHtml = `
+        <h2 class="text-3xl font-bold mb-6 text-center">Your Gallery</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            ${logsWithPhotos.map(log => `
+                <div class="cursor-pointer group">
+                    <img src="${log.photoURL}" alt="Gallery image for ${log.mod_type}" class="w-full h-48 object-cover rounded-lg shadow-md group-hover:shadow-xl transition-shadow">
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    container.innerHTML = galleryHtml;
+}
+
+function renderJewelryCollection() {
+    const container = document.getElementById('jewelry-content');
+    if (!container) return;
+
+    const jewelryLogs = allLogs.filter(log => log.piercing_log_type === 'jewelry_change').sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (jewelryLogs.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 px-6 card"><p class="text-gray-500">You haven't logged any jewelry changes yet. Log a piercing with the "Jewelry Change" type to start your collection!</p></div>`;
+        return;
+    }
+    
+    const jewelryHtml = `
+        <h2 class="text-3xl font-bold mb-6 text-center">Your Jewelry Collection</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${jewelryLogs.map(log => `
+                <div class="card flex items-start gap-4 p-4">
+                    ${log.photoURL ? `<img src="${log.photoURL}" class="w-24 h-24 object-cover rounded-md">` : ''}
+                    <div class="text-sm">
+                        <p class="font-bold">${log.jewelry_description || 'Unnamed Piece'}</p>
+                        <p><strong>For:</strong> ${log.piercing_type || 'N/A'}</p>
+                        <p><strong>Material:</strong> ${log.jewelry_material || 'N/A'}</p>
+                        <p class="text-xs text-gray-500 mt-1">Logged on ${new Date(log.date + 'T00:00:00').toLocaleDateString()}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    container.innerHTML = jewelryHtml;
+}
+
 function renderStats() {
     const container = document.getElementById('stats-content');
     if (!container) return;
@@ -744,6 +802,8 @@ function clearAllData() {
     renderAchievements();
     renderLogs();
     renderGoals();
+    renderGallery();
+    renderJewelryCollection();
 }
 
 // --- RUN ---
