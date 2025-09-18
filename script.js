@@ -8,7 +8,7 @@ import { achievements as allAchievements } from './achievements.js';
 // --- SECTION: FIREBASE & APP INITIALIZATION ---
 let app, auth, db, storage;
 try {
-    // This object will be populated by the deployment script
+    // This object is populated by the deploy.yml workflow
     const firebaseConfig = {
       apiKey: "%%API_KEY%%",
       authDomain: "%%AUTH_DOMAIN%%",
@@ -18,6 +18,12 @@ try {
       appId: "%%APP_ID%%",
       measurementId: "%%MEASUREMENT_ID%%"
     };
+
+    // Check if placeholders were replaced. If not, throw an error.
+    if (firebaseConfig.apiKey.startsWith("%%")) {
+        throw new Error("Firebase config placeholders not replaced.");
+    }
+
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
@@ -28,7 +34,6 @@ try {
 }
 
 // --- SECTION: GLOBAL STATE ---
-// (The rest of your file remains unchanged)
 let userId = null;
 let unsubscribeLogs, unsubscribeSettings;
 let allLogs = [];
