@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ink & Iron - The Body Mod Journal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="antialiased text-gray-800 theme-default">
+
+    <div id="app" class="container mx-auto p-4 md:p-6 lg:p-8 max-w-4xl">
+        
+        <header class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex items-center gap-4">
+                <img id="logo" src="logo.svg" alt="Ink & Iron Logo" class="h-16 w-16" onerror="this.style.display='none'">
+                <div class="text-left">
+                    <h1 class="text-4xl font-bold" style="color: var(--text-primary);">Ink & Iron</h1>
+                    <p class="text-xl -mt-1" style="color: var(--text-secondary);">The Body Mod Journal</p>
+                    <p id="quote-message" class="text-sm italic mt-2" style="color: var(--text-accent);"></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                 <select id="theme-switcher">
+                    <option value="default">Default</option>
+                    <option value="sunset">Sunset</option>
+                    <option value="forest">Forest</option>
+                    <option value="pride">Pride</option>
+                    <option value="galaxy">Galaxy</option>
+                    <option value="ocean">Ocean</option>
+                    <option value="cherry-blossom">Cherry Blossom</option>
+                </select>
+                <div id="auth-container" class="text-right">
+                    <button id="sign-in-btn" class="btn-primary font-bold py-2 px-4 rounded-md flex items-center gap-2">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.222 0-9.618-3.67-11.083-8.584l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.447-2.274 4.481-4.244 5.875l6.19 5.238C42.012 35.845 44 30.137 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+                        Sign in
+                    </button>
+                    <div id="user-info" class="hidden items-center gap-3">
+                        <img id="user-photo" class="w-10 h-10 rounded-full" src="https://placehold.co/40x40" alt="User photo">
+                        <div>
+                            <p id="user-name" class="font-semibold"></p>
+                            <button id="sign-out-btn" class="text-sm text-red-500 hover:underline">Sign out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="content-area" class="opacity-50 pointer-events-none">
+            
+            <div class="border-b border-gray-200 mb-6">
+                <nav class="-mb-px flex justify-center space-x-2 sm:space-x-6 text-sm sm:text-base flex-wrap">
+                    <a class="tab-link active" data-tab="dashboard">Dashboard</a>
+                    <a class="tab-link" data-tab="stats">Stats</a>
+                    <a class="tab-link" data-tab="achievements">Achievements</a>
+                    <a class="tab-link" data-tab="profile">Profile</a>
+                    <a class="tab-link" data-tab="settings">Settings</a>
+                </nav>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboard-content" class="tab-content active">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="card p-6">
+                        <h2 class="text-xl font-semibold mb-3" style="color: var(--text-secondary);">Latest Activity</h2>
+                        <div class="space-y-2">
+                            <p><strong>Last Logged:</strong> <span id="current-mod-type">N/A</span></p>
+                            <p><strong>Details:</strong> <span id="current-mod-details">N/A</span></p>
+                            <p><strong>Date:</strong> <span id="last-mod-date">N/A</span></p>
+                            <div id="next-stretch-container" class="hidden pt-2 mt-2 border-t border-gray-200">
+                                <p class="font-semibold text-sm">Next Recommended Stretch:</p>
+                                <p id="next-stretch-date" class="text-lg font-bold" style="color: var(--brand-secondary);">N/A</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <h2 class="text-xl font-semibold" style="color: var(--text-secondary);">Goal Center</h2>
+                            <button id="add-goal-btn" class="btn-primary text-sm font-bold py-1 px-3 rounded-md">Add / Edit</button>
+                        </div>
+                        <div id="goal-list-container" class="space-y-4">
+                            <!-- Goals will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4">Log a New Entry</h2>
+                    <form id="log-form">
+                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Universal Fields -->
+                            <div>
+                                <label for="log-date" class="block text-sm font-medium mb-1">Date</label>
+                                <input type="date" id="log-date" class="w-full p-2 border border-gray-300 rounded-md" required>
+                            </div>
+                             <div>
+                                <label for="mod-type" class="block text-sm font-medium mb-1">Modification Type</label>
+                                <select id="mod-type" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <option value="stretch" selected>Stretch</option>
+                                    <option value="tattoo">Tattoo</option>
+                                    <option value="piercing">Piercing</option>
+                                    <option value="care">Care Routine</option>
+                                </select>
+                            </div>
+
+                            <!-- Dynamic Fields Container -->
+                            <div id="dynamic-fields-container" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Fields populated by JS -->
+                            </div>
+                            
+                            <!-- Universal Fields Continued -->
+                            <div class="md:col-span-2">
+                                <label for="log-notes" class="block text-sm font-medium mb-1">Notes</label>
+                                <textarea id="log-notes" rows="3" placeholder="How did it feel? Healing process? etc." class="w-full p-2 border border-gray-300 rounded-md"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="log-photo" class="block text-sm font-medium mb-1">Add Photo</label>
+                                <input type="file" id="log-photo" name="log-photo" accept="image/*" class="w-full text-sm">
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button type="submit" id="log-mod-btn" class="btn-primary font-bold py-2 px-6 rounded-md">Log Entry</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="log-container"></div>
+            </div>
+
+            <!-- Stats Tab -->
+            <div id="stats-content" class="tab-content"></div>
+            
+            <!-- Achievements Tab -->
+            <div id="achievements-content" class="tab-content"></div>
+
+            <!-- Profile Tab -->
+            <div id="profile-content" class="tab-content">
+                <h2 class="text-3xl font-bold mb-6 text-center">Your Profile</h2>
+                <div class="card p-6 max-w-md mx-auto">
+                    <div class="space-y-6">
+                        <div>
+                            <label for="display-name" class="block text-sm font-medium mb-1">Display Name</label>
+                            <input type="text" id="display-name" class="w-full p-2 border border-gray-300 rounded-md">
+                             <p class="text-xs mt-1 text-gray-500">This name will be shown in the app header.</p>
+                        </div>
+                        <div>
+                            <label for="user-birthday" class="block text-sm font-medium mb-1">Birthday</label>
+                            <input type="date" id="user-birthday" class="w-full p-2 border border-gray-300 rounded-md">
+                             <p class="text-xs mt-1 text-gray-500">Help personalize your experience. Stored securely and never shared.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-content" class="tab-content">
+                <h2 class="text-3xl font-bold mb-6 text-center">Settings</h2>
+                <div class="card p-6 max-w-md mx-auto">
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-semibold mb-2">Data Management</h3>
+                            <p class="text-sm mb-2" style="color: var(--text-secondary);">Export your data for a local backup, or import data from another device.</p>
+                            <div class="flex gap-4">
+                                <button id="export-data-btn" class="btn-primary w-full py-2 rounded-md">Export Data</button>
+                                <button id="import-data-btn" class="w-full py-2 rounded-md border" style="color: var(--text-secondary);">Import Data</button>
+                                <input type="file" id="import-file-input" class="hidden" accept=".json">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Modal Container for Achievements, etc. -->
+    <div id="main-modal" class="modal-overlay hidden"></div>
+
+    <!-- Goal Modal Structure -->
+    <div id="goal-modal" class="modal-overlay hidden">
+        <div class="modal-content card">
+            <h2 class="text-2xl font-bold mb-4">Manage Goals</h2>
+            <div id="goal-edit-list" class="space-y-4 max-h-64 overflow-y-auto mb-4 pr-2">
+                <!-- Editable goal list will be rendered here -->
+            </div>
+            <button id="add-new-goal-btn" class="w-full py-2 border-2 border-dashed rounded-md text-sm hover:bg-gray-50" style="color: var(--text-secondary); border-color: var(--border-accent);">+ Add New Goal</button>
+            <div class="mt-6 flex justify-end">
+                <button type="button" data-action="close-goal" class="btn-primary font-bold py-2 px-4 rounded-md">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Scripts -->
+    <script type="module" src="achievements.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
+
