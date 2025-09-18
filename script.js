@@ -1,14 +1,3 @@
-Yes, I can provide you with the complete, updated code with all the recommended changes implemented.
-
-I've taken your original `script.js` and applied the critical bug fix for goal editing and the performance improvement for rendering friends. I've marked the specific sections I changed with comments so you can see what was done.
-
-You can **copy the entire code block** below and use it to replace the contents of your `script.js` file. 👨‍💻
-
------
-
-## Updated `script.js` with All Changes Implemented
-
-```javascript
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
