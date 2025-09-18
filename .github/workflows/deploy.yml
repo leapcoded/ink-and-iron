@@ -1,0 +1,35 @@
+name: Deploy to GitHub Pages
+
+# Run this workflow every time a change is pushed to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allows the action to commit to the gh-pages branch
+    steps:
+      - name: Checkout 🛎️
+        # Downloads the code from your repository
+        uses: actions/checkout@v4
+
+      - name: Inject Firebase Config 🤫
+        # This is the magic step. It finds the placeholder in script.js
+        # and replaces it with your secret config.
+        run: |
+          sed -i "s|'%%FIREBASE_CONFIG_PLACEHOLDER%%'|'${{ secrets.FIREBASE_CONFIG }}'|" script.js
+        
+      - name: Deploy 🚀
+        # This action takes your modified code and pushes it to the 'gh-pages'
+        # branch, which is what your live site will be served from.
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./ # Deploy the root directory
+          publish_branch: gh-pages # The branch to deploy to
+          # This ensures that old files from previous deployments are removed
+          keep_files: false 
+
