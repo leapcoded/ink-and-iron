@@ -8,7 +8,16 @@ import { achievements as allAchievements } from './achievements.js';
 // --- SECTION: FIREBASE & APP INITIALIZATION ---
 let app, auth, db, storage;
 try {
-    const firebaseConfig = %%FIREBASE_CONFIG_PLACEHOLDER%%;
+    // This object will be populated by the deployment script
+    const firebaseConfig = {
+      apiKey: "%%API_KEY%%",
+      authDomain: "%%AUTH_DOMAIN%%",
+      projectId: "%%PROJECT_ID%%",
+      storageBucket: "%%STORAGE_BUCKET%%",
+      messagingSenderId: "%%MESSAGING_SENDER_ID%%",
+      appId: "%%APP_ID%%",
+      measurementId: "%%MEASUREMENT_ID%%"
+    };
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
@@ -19,6 +28,7 @@ try {
 }
 
 // --- SECTION: GLOBAL STATE ---
+// (The rest of your file remains unchanged)
 let userId = null;
 let unsubscribeLogs, unsubscribeSettings;
 let allLogs = [];
