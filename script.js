@@ -8,7 +8,16 @@ import { achievements as allAchievements } from './achievements.js';
 // --- SECTION: FIREBASE & APP INITIALIZATION ---
 let app, auth, db, storage;
 try {
-    const firebaseConfig = {apiKey:AIzaSyB5_SZGECDE170o87N7DlhhVcuL0KLr4Og,authDomain:ink-and-iron-57e6e.firebaseapp.com,projectId:ink-and-iron-57e6e,storageBucket:ink-and-iron-57e6e.firebasestorage.app,messagingSenderId:795969760706,appId:1:795969760706:web:bb82ba49f9880b8b113a5b,measurementId:G-6F3YFPYB0T};
+    // This object will be populated by the deployment script
+    const firebaseConfig = {
+      apiKey: "%%API_KEY%%",
+      authDomain: "%%AUTH_DOMAIN%%",
+      projectId: "%%PROJECT_ID%%",
+      storageBucket: "%%STORAGE_BUCKET%%",
+      messagingSenderId: "%%MESSAGING_SENDER_ID%%",
+      appId: "%%APP_ID%%",
+      measurementId: "%%MEASUREMENT_ID%%"
+    };
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
@@ -19,6 +28,7 @@ try {
 }
 
 // --- SECTION: GLOBAL STATE ---
+// (The rest of your file remains unchanged)
 let userId = null;
 let unsubscribeLogs, unsubscribeSettings;
 let allLogs = [];
