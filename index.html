@@ -234,10 +234,25 @@
         </div>
     </div>
 
+    <!-- Generic Confirmation Modal -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content card max-w-sm">
+            <p id="confirm-message" class="text-center mb-6"></p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-yes-btn" class="btn-danger font-bold py-2 px-6 rounded-md">Yes</button>
+                <button id="confirm-no-btn" class="font-bold py-2 px-6 rounded-md border">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert/Notification Toast -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 bg-gray-800 text-white py-2 px-5 rounded-lg shadow-lg opacity-0 transition-opacity duration-300">
+        <p id="toast-message"></p>
+    </div>
+
     <!-- Application Scripts -->
     <script type="module" src="achievements.js"></script>
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
 
