@@ -38,6 +38,7 @@ let userId = null;
 let unsubscribeLogs, unsubscribeSettings;
 let allLogs = [];
 let userSettings = { achievements: {}, usedThemes: [], goals: [] };
+let currentLogFilter = 'all'; // New state for filtering
 const quotes = ["Your body is a journal, and tattoos are the stories.", "Patience is the most important tool you have.", "Wear your art with pride."];
 
 // --- SECTION: UI ELEMENTS ---
@@ -120,7 +121,7 @@ const fetchLogs = () => {
     unsubscribeLogs = onSnapshot(q, snapshot => {
         allLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         updateDashboard();
-        renderLogs();
+        renderLogs(); // Initial render
         renderStats();
         checkAchievements();
     }, error => console.error("Error fetching logs:", error));
@@ -366,49 +367,55 @@ function applySettings() {
 }
 
 function updateDashboard() {
-    const latestLog = allLogs.length > 0 ? allLogs[0] : null;
+    // Sort all logs by date to find the most recent one
+    const sortedLogs = [...allLogs].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const latestLog = sortedLogs.length > 0 ? sortedLogs[0] : null;
 
     if (latestLog) {
         document.getElementById('current-mod-type').textContent = latestLog.mod_type.charAt(0).toUpperCase() + latestLog.mod_type.slice(1);
         let details = 'N/A';
-        if(latestLog.mod_type === 'stretch') details = latestLog.size || 'N/A';
-        if(latestLog.mod_type === 'tattoo') details = latestLog.placement || 'N/A';
-        if(latestLog.mod_type === 'piercing') details = latestLog.piercing_type || 'N/A';
+        if (latestLog.mod_type === 'stretch') details = latestLog.size || 'N/A';
+        if (latestLog.mod_type === 'tattoo') details = latestLog.placement || 'N/A';
+        if (latestLog.mod_type === 'piercing') details = latestLog.piercing_type || 'N/A';
         document.getElementById('current-mod-details').textContent = details;
         document.getElementById('last-mod-date').textContent = new Date(latestLog.date + 'T00:00:00').toLocaleDateString();
-
-        const nextStretchContainer = document.getElementById('next-stretch-container');
-        if (latestLog.mod_type === 'stretch' && latestLog.stretch_type === 'up') {
-            const lastStretchDate = new Date(latestLog.date + 'T00:00:00');
-            const lastSizeMM = parseSizeToMM(latestLog.size);
-            let waitDays;
-
-            // Using the new, more detailed wait times based on the provided image
-            if (lastSizeMM < 2.5) { // Up to 10g (2.5mm)
-                waitDays = 45; // 1.5+ months
-            } else if (lastSizeMM < 4) { // Up to 6g (4mm)
-                waitDays = 75; // ~2.5 months
-            } else if (lastSizeMM < 7) { // Up to 2g (6mm) -> 1g is 7mm
-                waitDays = 150; // ~5 months
-            } else { // For larger sizes, maintain a long wait
-                waitDays = 180; // 6+ months
-            }
-            
-            const nextDate = new Date(lastStretchDate);
-            nextDate.setDate(nextDate.getDate() + waitDays);
-            
-            document.getElementById('next-stretch-date').textContent = nextDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + ` (after ${waitDays} days)`;
-            nextStretchContainer.classList.remove('hidden');
-        } else {
-            nextStretchContainer.classList.add('hidden');
-        }
     } else {
+        // Reset if no logs
         document.getElementById('current-mod-type').textContent = 'N/A';
         document.getElementById('current-mod-details').textContent = 'N/A';
         document.getElementById('last-mod-date').textContent = 'N/A';
-        document.getElementById('next-stretch-container').classList.add('hidden');
+    }
+
+    // Find the latest "stretch up" log specifically for the recommendation
+    const stretchUpLogs = allLogs.filter(log => log.mod_type === 'stretch' && log.stretch_type === 'up');
+    const latestStretchUpLog = stretchUpLogs.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    const nextStretchContainer = document.getElementById('next-stretch-container');
+
+    if (latestStretchUpLog) {
+        const lastStretchDate = new Date(latestStretchUpLog.date + 'T00:00:00');
+        const lastSizeMM = parseSizeToMM(latestStretchUpLog.size);
+        let waitDays;
+
+        if (lastSizeMM < 2.5) { // Up to 10g (2.5mm)
+            waitDays = 45; // 1.5+ months
+        } else if (lastSizeMM < 4) { // Up to 6g (4mm)
+            waitDays = 75; // ~2.5 months
+        } else if (lastSizeMM < 7) { // Up to 2g (6mm) -> 1g is 7mm
+            waitDays = 150; // ~5 months
+        } else { // For larger sizes, maintain a long wait
+            waitDays = 180; // 6+ months
+        }
+        
+        const nextDate = new Date(lastStretchDate);
+        nextDate.setDate(nextDate.getDate() + waitDays);
+        
+        document.getElementById('next-stretch-date').textContent = nextDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + ` (after ${waitDays} days)`;
+        nextStretchContainer.classList.remove('hidden');
+    } else {
+        nextStretchContainer.classList.add('hidden');
     }
 }
+
 
 function renderGoals() {
     const container = document.getElementById('goal-list-container');
@@ -435,72 +442,103 @@ function renderGoals() {
 
 
 function renderLogs() {
-    const container = document.getElementById('log-container');
+    const container = document.getElementById('logbook-content');
     if (!container) return;
 
-    if (allLogs.length === 0) {
-        container.innerHTML = `<div class="text-center py-10 px-6 card"><p class="text-gray-500">You haven't logged any activity yet. Fill out the form above to get started!</p></div>`;
-        return;
-    }
+    // Filter logs based on the current filter state
+    const filteredLogs = allLogs.filter(log => currentLogFilter === 'all' || log.mod_type === currentLogFilter);
+    // Sort filtered logs by date
+    const sortedFilteredLogs = filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    const logEntriesHtml = allLogs.map(log => {
-        const date = new Date(log.date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        let detailsHtml = '';
 
-        switch (log.mod_type) {
-            case 'stretch':
-                detailsHtml = `
-                    <p><strong>Type:</strong> <span class="capitalize">${log.stretch_type || 'N/A'}</span></p>
-                    <p><strong>Size:</strong> ${log.size || 'N/A'}</p>
-                    <p><strong>Irritation:</strong> ${log.irritation || '1'}/5</p>
-                `;
-                break;
-            case 'tattoo':
-                detailsHtml = `
-                    <p><strong>Placement:</strong> ${log.placement || 'N/A'}</p>
-                    <p><strong>Artist:</strong> ${log.artist || 'N/A'}</p>
-                    <p><strong>Duration:</strong> ${log.duration ? `${log.duration} minutes` : 'N/A'}</p>
-                `;
-                break;
-            case 'piercing':
-                detailsHtml = `
-                    <p><strong>Type:</strong> ${log.piercing_type || 'N/A'}</p>
-                    <p><strong>Placement:</strong> ${log.placement || 'N/A'}</p>
-                    <p><strong>Log Type:</strong> <span class="capitalize">${(log.piercing_log_type || 'N/A').replace('_', ' ')}</span></p>
-                `;
-                if (log.piercing_log_type === 'jewelry_change') {
-                    detailsHtml += `
-                        <p><strong>Jewelry Material:</strong> ${log.jewelry_material || 'N/A'}</p>
-                        <p><strong>Jewelry Info:</strong> ${log.jewelry_description || 'N/A'}</p>
+    const filterButtonsHtml = `
+        <div class="flex justify-center gap-2 mb-6">
+            <button class="log-filter-btn ${currentLogFilter === 'all' ? 'active' : ''}" data-filter="all">All</button>
+            <button class="log-filter-btn ${currentLogFilter === 'stretch' ? 'active' : ''}" data-filter="stretch">Stretch</button>
+            <button class="log-filter-btn ${currentLogFilter === 'tattoo' ? 'active' : ''}" data-filter="tattoo">Tattoo</button>
+            <button class="log-filter-btn ${currentLogFilter === 'piercing' ? 'active' : ''}" data-filter="piercing">Piercing</button>
+            <button class="log-filter-btn ${currentLogFilter === 'care' ? 'active' : ''}" data-filter="care">Care</button>
+        </div>
+    `;
+
+    if (sortedFilteredLogs.length === 0) {
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold mb-4 mt-8 text-center">Your Logbook</h2>
+            ${filterButtonsHtml}
+            <div class="text-center py-10 px-6 card"><p class="text-gray-500">You haven't logged any activity for this category yet.</p></div>`;
+    } else {
+        const logEntriesHtml = sortedFilteredLogs.map(log => {
+            const date = new Date(log.date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            let detailsHtml = '';
+
+            switch (log.mod_type) {
+                case 'stretch':
+                    detailsHtml = `
+                        <p><strong>Type:</strong> <span class="capitalize">${log.stretch_type || 'N/A'}</span></p>
+                        <p><strong>Size:</strong> ${log.size || 'N/A'}</p>
+                        <p><strong>Irritation:</strong> ${log.irritation || '1'}/5</p>
                     `;
-                }
-                break;
-            case 'care':
-                 detailsHtml = `<p>Logged a care routine.</p>`;
-                 break;
-        }
+                    break;
+                case 'tattoo':
+                    detailsHtml = `
+                        <p><strong>Placement:</strong> ${log.placement || 'N/A'}</p>
+                        <p><strong>Artist:</strong> ${log.artist || 'N/A'}</p>
+                        <p><strong>Duration:</strong> ${log.duration ? `${log.duration} minutes` : 'N/A'}</p>
+                    `;
+                    break;
+                case 'piercing':
+                    detailsHtml = `
+                        <p><strong>Type:</strong> ${log.piercing_type || 'N/A'}</p>
+                        <p><strong>Placement:</strong> ${log.placement || 'N/A'}</p>
+                        <p><strong>Log Type:</strong> <span class="capitalize">${(log.piercing_log_type || 'N/A').replace('_', ' ')}</span></p>
+                    `;
+                    if (log.piercing_log_type === 'jewelry_change') {
+                        detailsHtml += `
+                            <p><strong>Jewelry Material:</strong> ${log.jewelry_material || 'N/A'}</p>
+                            <p><strong>Jewelry Info:</strong> ${log.jewelry_description || 'N/A'}</p>
+                        `;
+                    }
+                    break;
+                case 'care':
+                     detailsHtml = `<p>Logged a care routine.</p>`;
+                     break;
+            }
 
-        return `
-            <div class="card mb-4 overflow-hidden">
-                <div class="flex flex-col md:flex-row">
-                    ${log.photoURL ? `<img src="${log.photoURL}" class="w-full md:w-48 h-48 object-cover" alt="Log entry photo">` : ''}
-                    <div class="p-4 flex-grow">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 class="font-bold text-lg capitalize">${log.mod_type}</h3>
-                                <p class="text-sm text-gray-500">${date}</p>
+            return `
+                <div class="card mb-4 overflow-hidden">
+                    <div class="flex flex-col md:flex-row">
+                        ${log.photoURL ? `<img src="${log.photoURL}" class="w-full md:w-48 h-48 object-cover" alt="Log entry photo">` : ''}
+                        <div class="p-4 flex-grow">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-lg capitalize">${log.mod_type}</h3>
+                                    <p class="text-sm text-gray-500">${date}</p>
+                                </div>
                             </div>
+                            <div class="text-sm space-y-1 mb-3">${detailsHtml}</div>
+                            ${log.notes ? `<p class="text-sm italic bg-gray-50 p-2 rounded-md">"${log.notes}"</p>` : ''}
                         </div>
-                        <div class="text-sm space-y-1 mb-3">${detailsHtml}</div>
-                        ${log.notes ? `<p class="text-sm italic bg-gray-50 p-2 rounded-md">"${log.notes}"</p>` : ''}
                     </div>
                 </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
 
-    container.innerHTML = `<h2 class="text-2xl font-bold mb-4 mt-8">Your Logbook</h2>${logEntriesHtml}`;
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold mb-4 mt-8 text-center">Your Logbook</h2>
+            ${filterButtonsHtml}
+            ${logEntriesHtml}
+        `;
+    }
+    
+    // Add event listeners to the new filter buttons
+    document.querySelectorAll('.log-filter-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            currentLogFilter = e.target.dataset.filter;
+            renderLogs(); // Re-render the logs with the new filter
+        });
+    });
 }
+
 function renderStats() {
     const container = document.getElementById('stats-content');
     if (!container) return;
@@ -529,7 +567,7 @@ function renderStats() {
     const totalTattooHours = Math.floor(totalTattooTime / 60);
     const totalTattooMinutes = totalTattooTime % 60;
     
-    const firstLogDate = allLogs.length > 0 ? new Date(allLogs[allLogs.length - 1].date + 'T00:00:00') : new Date();
+    const firstLogDate = allLogs.length > 0 ? new Date(allLogs.sort((a,b) => new Date(a.date) - new Date(b.date))[0].date + 'T00:00:00') : new Date();
     const daysSinceFirstLog = Math.floor((new Date() - firstLogDate) / (1000 * 60 * 60 * 24));
 
     const statsHtml = `
