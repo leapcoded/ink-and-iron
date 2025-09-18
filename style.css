@@ -138,6 +138,32 @@ body {
 }
 
 /* Animations */
+
+@keyframes progress-animation {
+    from { width: 0; }
+}
+
+#toast-notification {
+    z-index: 100;
+}
+
+.log-filter-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border-accent);
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    background-color: var(--bg-secondary);
+}
+.log-filter-btn:hover {
+    background-color: var(--bg-accent);
+}
+.log-filter-btn.active {
+    background-color: var(--brand-primary);
+    color: white;
+    border-color: var(--brand-primary);
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
