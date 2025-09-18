@@ -556,7 +556,7 @@ function renderGallery() {
         <h2 class="text-3xl font-bold mb-6 text-center">Your Gallery</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             ${logsWithPhotos.map(log => `
-                <div class="cursor-pointer group">
+                <div class="cursor-pointer group gallery-item">
                     <img src="${log.photoURL}" alt="Gallery image for ${log.mod_type}" class="w-full h-48 object-cover rounded-lg shadow-md group-hover:shadow-xl transition-shadow">
                 </div>
             `).join('')}
@@ -564,6 +564,22 @@ function renderGallery() {
     `;
 
     container.innerHTML = galleryHtml;
+
+    // Add click listeners to open modal
+    container.querySelectorAll('.gallery-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const imgSrc = item.querySelector('img').src;
+            const imgAlt = item.querySelector('img').alt;
+            openModal(`
+                <div class="text-center">
+                    <img src="${imgSrc}" alt="${imgAlt}" class="max-w-full max-h-[80vh] mx-auto rounded-lg">
+                    <div class="mt-4">
+                        <button data-action="close" class="btn-primary font-bold py-2 px-6 rounded-md">Close</button>
+                    </div>
+                </div>
+            `);
+        });
+    });
 }
 
 function renderJewelryCollection() {
