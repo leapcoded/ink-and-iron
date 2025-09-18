@@ -58,6 +58,7 @@
                     <a class="tab-link" data-tab="logbook">Logbook</a>
                     <a class="tab-link" data-tab="gallery">Gallery</a>
                     <a class="tab-link" data-tab="jewelry">Jewelry</a>
+                    <a class="tab-link" data-tab="friends">Friends</a>
                     <a class="tab-link" data-tab="stats">Stats</a>
                     <a class="tab-link" data-tab="achievements">Achievements</a>
                     <a class="tab-link" data-tab="profile">Profile</a>
@@ -140,6 +141,9 @@
             <!-- Jewelry Tab -->
             <div id="jewelry-content" class="tab-content"></div>
 
+            <!-- Friends Tab -->
+            <div id="friends-content" class="tab-content"></div>
+
             <!-- Stats Tab -->
             <div id="stats-content" class="tab-content"></div>
             
@@ -198,6 +202,19 @@
             <button id="add-new-goal-btn" class="w-full py-2 border-2 border-dashed rounded-md text-sm hover:bg-gray-50" style="color: var(--text-secondary); border-color: var(--border-accent);">+ Add New Goal</button>
             <div class="mt-6 flex justify-end">
                 <button type="button" data-action="close-goal" class="btn-primary font-bold py-2 px-4 rounded-md">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Friend Modal Structure -->
+    <div id="friend-modal" class="modal-overlay hidden">
+        <div class="modal-content card">
+            <h2 class="text-2xl font-bold mb-4">Add a Friend</h2>
+            <p class="text-sm mb-4 text-gray-500">Enter your friend's unique User ID to add them to your list. Your own User ID is displayed in the Profile tab.</p>
+            <input type="text" id="friend-id-input" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Enter User ID">
+            <div class="mt-6 flex justify-end gap-4">
+                <button type="button" data-action="close-friend" class="py-2 px-4 rounded-md">Cancel</button>
+                <button type="button" id="add-friend-confirm-btn" class="btn-primary font-bold py-2 px-4 rounded-md">Add Friend</button>
             </div>
         </div>
     </div>
