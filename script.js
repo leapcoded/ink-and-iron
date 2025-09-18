@@ -115,7 +115,7 @@ const fetchSettings = () => {
 const fetchLogs = () => {
     if (!userId) return;
     const logsRef = collection(db, `users/${userId}/logs`);
-    const q = query(logsRef, orderBy('date', 'desc'), orderBy('createdAt', 'desc'));
+    const q = query(logsRef, orderBy('createdAt', 'desc'));
     if (unsubscribeLogs) unsubscribeLogs();
     unsubscribeLogs = onSnapshot(q, snapshot => {
         allLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -603,4 +603,5 @@ function clearAllData() {
 // --- RUN ---
 init();
 handleModTypeChange();
+
 
