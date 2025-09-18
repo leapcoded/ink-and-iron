@@ -281,7 +281,7 @@ async function renderFriends() {
 }
 
 
-// --- SECTION: HELPER & UI FUNCTIONS ---
+// --- SECTION: HELPER & UI FUNCTIONS (DEFINED BEFORE INIT) ---
 
 function handleModTypeChange() {
     const selectedType = modTypeSelect.value;
@@ -327,7 +327,6 @@ function handleModTypeChange() {
     }
     container.innerHTML = fieldsHtml;
 
-    // Add listener for piercing log type to show/hide jewelry fields
     if (selectedType === 'piercing') {
         const piercingLogTypeSelect = document.getElementById('piercing-log-type');
         const jewelryFields = document.getElementById('jewelry-fields');
@@ -431,7 +430,6 @@ function setupProfileTabListeners() {
     });
 }
 
-// --- SECTION: UI RENDERING ---
 function applySettings() {
     const theme = userSettings.theme || 'default';
     themeSwitcher.value = theme;
@@ -938,6 +936,25 @@ function clearAllData() {
     renderGallery();
     renderJewelryCollection();
 }
+
+// --- SECTION: INITIALIZATION & EVENT LISTENERS ---
+function init() {
+    if (!auth) return;
+    document.getElementById('log-date').valueAsDate = new Date();
+    signInBtn.addEventListener('click', () => signInWithPopup(auth, new GoogleAuthProvider()));
+    signOutBtn.addEventListener('click', () => signOut(auth));
+    logForm.addEventListener('submit', handleLogSubmit);
+    modTypeSelect.addEventListener('change', handleModTypeChange);
+    displayNameInput.addEventListener('change', (e) => saveSetting('displayName', e.target.value));
+    userBirthdayInput.addEventListener('change', (e) => saveSetting('birthday', e.target.value));
+    setupTabListeners();
+    setupThemeSwitcher();
+    setupGoalModalListeners();
+    setupFriendModalListeners();
+    setupProfileTabListeners();
+    handleModTypeChange();
+}
+
 
 // --- RUN ---
 init();
