@@ -10,13 +10,13 @@ let app, auth, db, storage;
 try {
     // This object will be populated by the deployment script
     const firebaseConfig = {
-      apiKey: "",
-      authDomain: "",
-      projectId: "",
-      storageBucket: "",
-      messagingSenderId: "",
-      appId: "",
-      measurementId: ""
+      apiKey: "AIzaSyB5_SZGECDE170o87N7DlhhVcuL0KLr4Og",
+      authDomain: "ink-and-iron-57e6e.firebaseapp.com",
+      projectId: "ink-and-iron-57e6e",
+      storageBucket: "ink-and-iron-57e6e.firebasestorage.app",
+      messagingSenderId: "795969760706",
+      appId: "1:795969760706:web:bb82ba49f9880b8b113a5b",
+      measurementId: "G-6F3YFPYB0T"
     };
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
