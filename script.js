@@ -892,7 +892,3 @@ function clearAllData() {
 // --- RUN ---
 init();
 handleModTypeChange();
-" with a syntax error in it, specifically "if (latestLog.mod_type === 'piercing') details = latestLog.piercing_type ||." and I am pointing it out. 
-The error is:
-Uncaught SyntaxError: Unexpected token '.'
-
